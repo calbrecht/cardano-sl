@@ -251,11 +251,42 @@ createCommandProcs hasAuxxMode printAction mSendActions = rights . fix $ \comman
         (,) <$> getArg tyInt "i"
             <*> getArgSome tyTxOut "out"
     , cpExec = \(i, outputs) -> do
-        Tx.send sendActions i outputs
+        Tx.send sendActions i outputs False
         return ValueUnit
     , cpHelp = "send from #i to specified transaction outputs \
                \ (use 'tx-out' to build them)"
     },
+
+    let name = "send-with-fake-input" in
+    needsSendActions name >>= \sendActions ->
+    needsAuxxMode name >>= \Dict ->
+    return CommandProc
+    { cpName = name
+    , cpArgumentPrepare = identity
+    , cpArgumentConsumer =
+        (,) <$> getArg tyInt "i"
+            <*> getArgSome tyTxOut "out"
+    , cpExec = \(i, outputs) -> do
+        Tx.send sendActions i outputs True
+        return ValueUnit
+    , cpHelp = "send a transaction with non-existent input  \
+               \ (for testing purposes only)"
+    },
+
+    let name = "send-without-witness" in
+    needsSendActions name >>= \sendActions ->
+    needsAuxxMode name >>= \Dict ->
+    return CommandProc
+    { cpName = name
+    , cpArgumentPrepare = identity
+    , cpArgumentConsumer = getArg tyTxOut "out"
+    , cpExec = \output -> do
+        Tx.sendWithoutWitnesses sendActions output
+        return ValueUnit
+    , cpHelp = "send a transaction with fake input without witnesses  \
+               \ (for testing purposes only)"
+    },
+
 
     let name = "vote" in
     needsSendActions name >>= \sendActions ->

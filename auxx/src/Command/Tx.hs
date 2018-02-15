@@ -7,6 +7,7 @@ module Command.Tx
        , sendToAllGenesis
        , send
        , sendTxsFromFile
+       , sendWithoutWitnesses
        ) where
 
 import           Universum
@@ -23,6 +24,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import           Data.Time.Units (toMicroseconds)
+import qualified Data.Vector as V
 import           Formatting (build, int, sformat, shown, stext, (%))
 import           Mockable (Mockable, SharedAtomic, SharedAtomicT, concurrently, currentTime, delay,
                            forConcurrently, modifySharedAtomic, newSharedAtomic)
@@ -39,9 +41,9 @@ import           Pos.Communication (SendActions, immediateConcurrentConversation
 import           Pos.Core (BlockVersionData (bvdSlotDuration), IsBootstrapEraAddr (..),
                            Timestamp (..), deriveFirstHDAddress, makePubKeyAddress, mkCoin)
 import           Pos.Core.Configuration (genesisBlockVersionData, genesisSecretKeys)
-import           Pos.Core.Txp (TxAux, TxOut (..), TxOutAux (..), txaF)
+import           Pos.Core.Txp (Tx (..), TxAux (..), TxIn (..), TxOut (..), TxOutAux (..), txaF, txInputs)
 import           Pos.Crypto (EncryptedSecretKey, emptyPassphrase, encToPublic, fakeSigner,
-                             safeToPublic, toPublic, withSafeSigners)
+                             safeToPublic, toPublic, unsafeHash, withSafeSigners)
 import           Pos.Txp (topsortTxAuxes)
 import           Pos.Util.UserSecret (usWallet, userSecret, wusRootKey)
 import           Pos.Util.Util (maybeThrow)
@@ -183,8 +185,9 @@ send
     => SendActions m
     -> Int
     -> NonEmpty TxOut
+    -> Bool
     -> m ()
-send sendActions idx outputs = do
+send sendActions idx outputs fakeInputs = do
     CmdCtx{ccPeers} <- getCmdCtx
     skey <- takeSecret
     let curPk = encToPublic skey
@@ -199,7 +202,10 @@ send sendActions idx outputs = do
         let getSigner = fromMaybe (error "Couldn't get SafeSigner") . flip HM.lookup addrSig
         -- BE CAREFUL: We create remain address using our pk, wallet doesn't show such addresses
         (txAux,_) <- lift $ prepareMTx getSigner mempty def (NE.fromList allAddresses) (map TxOutAux outputs) curPk
-        txAux <$ (ExceptT $ try $ submitTxRaw (immediateConcurrentConversations sendActions ccPeers) txAux)
+        let txAux' =
+                if not fakeInputs then txAux
+                else txAux { taTx = taTx txAux & txInputs %~ fmap (\x -> x { txInIndex = 100500 }) }
+        txAux' <$ (ExceptT $ try $ submitTxRaw (immediateConcurrentConversations sendActions ccPeers) txAux')
     case etx of
         Left err -> logError $ sformat ("Error: "%stext) (toText $ displayException err)
         Right tx -> logInfo $ sformat ("Submitted transaction: "%txaF) tx
@@ -210,6 +216,18 @@ send sendActions idx outputs = do
             _userSecret <- view userSecret >>= atomically . readTVar
             pure $ maybe (error "Unknown wallet address") (^. wusRootKey) (_userSecret ^. usWallet)
         | otherwise = (!! idx) <$> getSecretKeysPlain
+
+sendWithoutWitnesses
+    :: forall m. MonadAuxxMode m
+    => SendActions m
+    -> TxOut -> m ()
+sendWithoutWitnesses sendActions output = do
+  let fakeTxIn = TxInUtxo (unsafeHash ()) 1
+      fakeTx = UnsafeTx (fakeTxIn:|[]) (output:|[]) def
+      fakeTxAux = TxAux fakeTx V.empty
+
+  CmdCtx {ccPeers} <- getCmdCtx
+  void $ submitTxRaw (immediateConcurrentConversations sendActions ccPeers) fakeTxAux
 
 ----------------------------------------------------------------------------
 -- Send from file
