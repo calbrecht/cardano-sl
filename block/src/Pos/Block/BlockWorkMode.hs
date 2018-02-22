@@ -19,6 +19,7 @@ import           Pos.Block.Configuration (HasBlockConfiguration)
 import           Pos.Block.Network.Types (MsgBlock, MsgGetBlocks, MsgGetHeaders, MsgHeaders)
 import           Pos.Block.RetrievalQueue (BlockRetrievalQueue, BlockRetrievalQueueTag)
 import           Pos.Block.Slog.Types (HasSlogContext)
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Block.Types (LastKnownHeader, LastKnownHeaderTag, ProgressHeader,
                                   ProgressHeaderTag, RecoveryHeader, RecoveryHeaderTag)
 import           Pos.Communication.Limits.Types (MessageLimited)
@@ -84,4 +85,5 @@ type BlockWorkMode ctx m =
     , WithLogger m
 
     , HasBlockConfiguration
+    , HasBlockBehavior
     )

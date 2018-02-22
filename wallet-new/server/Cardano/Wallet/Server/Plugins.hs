@@ -25,6 +25,7 @@ import           Network.Wai (Application, Middleware)
 import           Network.Wai.Middleware.Cors (cors, corsMethods, corsRequestHeaders,
                                               simpleCorsResourcePolicy, simpleMethods)
 import           Network.Wai.Middleware.RequestLogger (logStdoutDev)
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Wallet.Web (cleanupAcidStatePeriodically, wwmcSendActions)
 import           Pos.Wallet.Web.Pending.Worker (startPendingTxsResubmitter)
 import qualified Pos.Wallet.Web.Server.Runner as V0
@@ -56,7 +57,8 @@ acidCleanupWorker WalletBackendParams{..} =
     cleanupAcidStatePeriodically (walletAcidInterval walletDbOptions)
 
 -- | The @Plugin@ which defines part of the conversation protocol for this node.
-conversation :: (HasConfigurations, HasCompileInfo) => WalletBackendParams -> Plugin WalletWebMode
+conversation :: (HasConfigurations, HasCompileInfo, HasBlockBehavior)
+             => WalletBackendParams -> Plugin WalletWebMode
 conversation wArgs = (, mempty) $ map (\act -> ActionSpec $ \__vI __sA -> act) (pluginsMonitoringApi wArgs)
   where
     pluginsMonitoringApi :: (WorkMode ctx m , HasNodeContext ctx , HasConfigurations, HasCompileInfo)

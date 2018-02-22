@@ -12,6 +12,8 @@ import           Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Data.Maybe (fromJust)
 import           Mockable (Production (..), runProduction)
+import           Pos.Behavior (BehaviorConfig (..))
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import           Pos.Communication (ActionSpec (..))
 import           Pos.DB.DB (initNodeDBs)
 import           Pos.Launcher (NodeParams (..), NodeResources (..), bracketNodeResources,
@@ -46,7 +48,7 @@ loggerName = "node"
 -}
 
 -- | The "workhorse" responsible for starting a Cardano edge node plus a number of extra plugins.
-actionWithWallet :: (HasConfigurations, HasCompileInfo)
+actionWithWallet :: (HasConfigurations, HasCompileInfo, HasBlockBehavior)
                  => SscParams
                  -> NodeParams
                  -> WalletBackendParams
@@ -92,7 +94,9 @@ startEdgeNode WalletStartupOptions{..} = do
       when (isDebugMode $ walletRunMode wsoWalletBackendParams) $
           generateSwaggerDocumentation
       (sscParams, nodeParams) <- getParameters
-      actionWithWallet sscParams nodeParams wsoWalletBackendParams
+      let blockBehavior = bcBlockBehavior . npBehaviorConfig $ nodeParams
+      withBlockBehavior blockBehavior $
+          actionWithWallet sscParams nodeParams wsoWalletBackendParams
   where
     getParameters :: HasConfigurations => Production (SscParams, NodeParams)
     getParameters = do

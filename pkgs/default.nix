@@ -6974,7 +6974,7 @@ inherit (pkgs) mesa;};
          , parser-combinators, QuickCheck, quickcheck-instances, random
          , reflection, safe-exceptions, scientific, serokell-util, split
          , stdenv, stm, temporary, text, text-format, time-units
-         , transformers, universum, unix, unordered-containers
+         , transformers, universum, unix, unordered-containers, vector
          }:
          mkDerivation {
            pname = "cardano-sl-auxx";
@@ -6993,13 +6993,14 @@ inherit (pkgs) mesa;};
              neat-interpolation optparse-applicative parser-combinators
              QuickCheck quickcheck-instances random reflection safe-exceptions
              scientific serokell-util split stm text text-format time-units
-             transformers universum unix unordered-containers
+             transformers universum unix unordered-containers vector
            ];
            libraryToolDepends = [ cpphs ];
            executableHaskellDepends = [
-             cardano-sl cardano-sl-core cardano-sl-infra cardano-sl-networking
-             cardano-sl-txp cardano-sl-util constraints formatting log-warper
-             network-transport-tcp safe-exceptions temporary universum unix
+             cardano-sl cardano-sl-block cardano-sl-core cardano-sl-infra
+             cardano-sl-networking cardano-sl-txp cardano-sl-util constraints
+             formatting log-warper network-transport-tcp safe-exceptions
+             temporary universum unix
            ];
            executableToolDepends = [ cpphs ];
            testHaskellDepends = [
@@ -7253,11 +7254,11 @@ inherit (pkgs) mesa;};
            ];
            libraryToolDepends = [ cpphs ];
            executableHaskellDepends = [
-             aeson base bytestring cardano-sl cardano-sl-core cardano-sl-infra
-             cardano-sl-networking cardano-sl-update cardano-sl-util formatting
-             lens log-warper optparse-applicative optparse-simple
-             purescript-bridge servant-multipart servant-server servant-swagger
-             swagger2 text universum
+             aeson base bytestring cardano-sl cardano-sl-block cardano-sl-core
+             cardano-sl-infra cardano-sl-networking cardano-sl-update
+             cardano-sl-util formatting lens log-warper optparse-applicative
+             optparse-simple purescript-bridge servant-multipart servant-server
+             servant-swagger swagger2 text universum
            ];
            executableToolDepends = [ cpphs ];
            testHaskellDepends = [
@@ -7410,10 +7411,10 @@ inherit (pkgs) mesa;};
            license = stdenv.lib.licenses.mit;
          }) {};
       "cardano-sl-node" = callPackage
-        ({ mkDerivation, base, cardano-sl, cardano-sl-core
-         , cardano-sl-infra, cardano-sl-networking, cardano-sl-ssc
-         , cardano-sl-update, cardano-sl-util, cpphs, formatting, log-warper
-         , stdenv, universum
+        ({ mkDerivation, base, cardano-sl, cardano-sl-block
+         , cardano-sl-core, cardano-sl-infra, cardano-sl-networking
+         , cardano-sl-ssc, cardano-sl-update, cardano-sl-util, cpphs
+         , formatting, log-warper, stdenv, universum
          }:
          mkDerivation {
            pname = "cardano-sl-node";
@@ -7422,7 +7423,7 @@ inherit (pkgs) mesa;};
            isLibrary = false;
            isExecutable = true;
            executableHaskellDepends = [
-             base cardano-sl cardano-sl-core cardano-sl-infra
+             base cardano-sl cardano-sl-block cardano-sl-core cardano-sl-infra
              cardano-sl-networking cardano-sl-ssc cardano-sl-update
              cardano-sl-util formatting log-warper universum
            ];
@@ -7638,11 +7639,12 @@ inherit (pkgs) mesa;};
            ];
            libraryToolDepends = [ cpphs ];
            executableHaskellDepends = [
-             aeson base bytestring cardano-sl cardano-sl-core cardano-sl-infra
-             cardano-sl-networking cardano-sl-ssc cardano-sl-txp cardano-sl-util
-             formatting lens log-warper optparse-applicative servant
-             servant-multipart servant-server servant-swagger servant-swagger-ui
-             swagger2 text time-units universum
+             aeson base bytestring cardano-sl cardano-sl-block cardano-sl-core
+             cardano-sl-infra cardano-sl-networking cardano-sl-ssc
+             cardano-sl-txp cardano-sl-util formatting lens log-warper
+             optparse-applicative servant servant-multipart servant-server
+             servant-swagger servant-swagger-ui swagger2 text time-units
+             universum
            ];
            executableToolDepends = [ cpphs ];
            testHaskellDepends = [
@@ -7661,19 +7663,20 @@ inherit (pkgs) mesa;};
          }) {};
       "cardano-sl-wallet-new" = callPackage
         ({ mkDerivation, aeson, aeson-pretty, base, bytestring, cardano-sl
-         , cardano-sl-client, cardano-sl-core, cardano-sl-crypto
-         , cardano-sl-infra, cardano-sl-networking, cardano-sl-ssc
-         , cardano-sl-txp, cardano-sl-update, cardano-sl-util
-         , cardano-sl-wallet, containers, data-default, exceptions
-         , formatting, generics-sop, hspec, http-api-data, http-client
-         , http-types, insert-ordered-containers, ixset-typed, json-sop
-         , lens, log-warper, memory, mtl, neat-interpolation, network-uri
-         , optparse-applicative, QuickCheck, quickcheck-instances
-         , safe-exceptions, serokell-util, servant, servant-client
-         , servant-quickcheck, servant-server, servant-swagger, stdenv, stm
-         , string-conv, swagger2, template-haskell, text, text-format, time
-         , time-units, transformers, universum, unordered-containers, vector
-         , wai, wai-cors, wai-extra, warp
+         , cardano-sl-block, cardano-sl-client, cardano-sl-core
+         , cardano-sl-crypto, cardano-sl-infra, cardano-sl-networking
+         , cardano-sl-ssc, cardano-sl-txp, cardano-sl-update
+         , cardano-sl-util, cardano-sl-wallet, containers, data-default
+         , exceptions, formatting, generics-sop, hspec, http-api-data
+         , http-client, http-types, insert-ordered-containers, ixset-typed
+         , json-sop, lens, log-warper, memory, mtl, neat-interpolation
+         , network-uri, optparse-applicative, QuickCheck
+         , quickcheck-instances, safe-exceptions, serokell-util, servant
+         , servant-client, servant-quickcheck, servant-server
+         , servant-swagger, stdenv, stm, string-conv, swagger2
+         , template-haskell, text, text-format, time, time-units
+         , transformers, universum, unordered-containers, vector, wai
+         , wai-cors, wai-extra, warp
          }:
          mkDerivation {
            pname = "cardano-sl-wallet-new";
@@ -7694,16 +7697,16 @@ inherit (pkgs) mesa;};
              wai warp
            ];
            executableHaskellDepends = [
-             aeson aeson-pretty base bytestring cardano-sl cardano-sl-client
-             cardano-sl-core cardano-sl-crypto cardano-sl-infra
-             cardano-sl-networking cardano-sl-ssc cardano-sl-txp
-             cardano-sl-update cardano-sl-util cardano-sl-wallet containers
-             data-default exceptions formatting http-api-data http-types
-             insert-ordered-containers ixset-typed lens log-warper memory mtl
-             neat-interpolation optparse-applicative QuickCheck serokell-util
-             servant servant-server servant-swagger stm string-conv swagger2
-             text text-format time-units universum unordered-containers wai
-             wai-cors wai-extra warp
+             aeson aeson-pretty base bytestring cardano-sl cardano-sl-block
+             cardano-sl-client cardano-sl-core cardano-sl-crypto
+             cardano-sl-infra cardano-sl-networking cardano-sl-ssc
+             cardano-sl-txp cardano-sl-update cardano-sl-util cardano-sl-wallet
+             containers data-default exceptions formatting http-api-data
+             http-types insert-ordered-containers ixset-typed lens log-warper
+             memory mtl neat-interpolation optparse-applicative QuickCheck
+             serokell-util servant servant-server servant-swagger stm
+             string-conv swagger2 text text-format time-units universum
+             unordered-containers wai wai-cors wai-extra warp
            ];
            testHaskellDepends = [
              aeson aeson-pretty base bytestring cardano-sl cardano-sl-client

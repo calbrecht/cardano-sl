@@ -14,6 +14,7 @@ import           Test.QuickCheck (Arbitrary (..), Property, choose, oneof, subli
 import           Test.QuickCheck.Monadic (pick)
 
 import           Pos.Arbitrary.Wallet.Web.ClientTypes ()
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import           Pos.Block.Logic (rollbackBlocks)
 import           Pos.Core (BlockCount (..), blkSecurityParam)
 import           Pos.Crypto (emptyPassphrase)
@@ -31,7 +32,7 @@ import           Test.Pos.Wallet.Web.Mode (walletPropertySpec)
 import           Test.Pos.Wallet.Web.Util (importSomeWallets, wpGenBlocks)
 
 spec :: Spec
-spec = withCompileInfo def $ withDefConfigurations $ do
+spec = withCompileInfo def $ withDefConfigurations $ withBlockBehavior def $ do
     describe "Pos.Wallet.Web.Tracking.BListener" $ modifyMaxSuccess (const 10) $ do
         describe "Two applications and rollbacks" twoApplyTwoRollbacksSpec
     describe "Pos.Wallet.Web.Tracking.evalChange" $ do
@@ -43,7 +44,7 @@ spec = withCompileInfo def $ withDefConfigurations $ do
     evalChangeSameAccountsDesc =
       "Outgoing transcation from account to the same account."
 
-twoApplyTwoRollbacksSpec :: (HasCompileInfo, HasConfigurations) => Spec
+twoApplyTwoRollbacksSpec :: (HasCompileInfo, HasConfigurations, HasBlockBehavior) => Spec
 twoApplyTwoRollbacksSpec = walletPropertySpec twoApplyTwoRollbacksDesc $ do
     let k = fromIntegral blkSecurityParam :: Word64
     void $ importSomeWallets (pure emptyPassphrase)

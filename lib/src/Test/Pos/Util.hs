@@ -40,11 +40,11 @@ module Test.Pos.Util
 import           Universum
 
 import           Data.Tagged (Tagged (..))
+import qualified Test.Hspec as Hspec (Expectation)
 import           Test.QuickCheck (Arbitrary (arbitrary), Property, counterexample, property)
 import           Test.QuickCheck.Gen (Gen, choose)
 import           Test.QuickCheck.Monadic (PropertyM, pick, stop)
 import           Test.QuickCheck.Property (Result (..), failed)
-import qualified Test.Hspec as Hspec (Expectation)
 
 import           Pos.Block.Configuration (HasBlockConfiguration, withBlockConfiguration)
 import           Pos.Configuration (HasNodeConfiguration, withNodeConfiguration)

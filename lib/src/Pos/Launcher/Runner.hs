@@ -42,6 +42,7 @@ import qualified System.Remote.Monitoring.Wai as Monitoring
 import           System.Wlog (WithLogger, logDebug, logInfo)
 
 import           Pos.Binary ()
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Communication (ActionSpec (..), EnqueueMsg, InSpecs (..), MkListeners (..),
                                     Msg, OutSpecs (..), PackingType, PeerData, SendActions,
                                     VerInfo (..), allListeners, bipPacking, hoistSendActions,
@@ -132,6 +133,7 @@ runRealModeDo
     :: forall ext a.
        ( HasConfigurations
        , HasCompileInfo
+       , HasBlockBehavior
        , Default ext
        , MonadTxpLocal (RealMode ext)
        , HasAdoptedBlockVersionData (RealMode ext)

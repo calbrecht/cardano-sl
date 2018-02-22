@@ -19,6 +19,7 @@ import qualified System.Metrics.Label as Label
 import           System.Random (randomRIO)
 import           System.Wlog (logDebug, logError, logInfo, logWarning)
 
+import           Pos.Block.Behavior (BlockBehavior (..), ForgeHeaderParams (..), blockBehavior)
 import           Pos.Block.BlockWorkMode (BlockWorkMode)
 import           Pos.Block.Configuration (networkDiameter)
 import           Pos.Block.Logic (calcChainQualityFixedTime, calcChainQualityM,
@@ -201,8 +202,12 @@ onNewSlotWhenLeader slotId pske SendActions {..} = do
     logWarningSWaitLinear 8 "onNewSlotWhenLeader" onNewSlotWhenLeaderDo
   where
     onNewSlotWhenLeaderDo = do
+        let behavior = blockBehavior
+        logInfo $ show behavior
         logInfoS "It's time to create a block for current slot"
-        createdBlock <- createMainBlockAndApply slotId pske
+        createdBlock <- createMainBlockAndApply slotId (case bbForgeHeader behavior of
+                                                          HeaderNormal      -> pske
+                                                          HeaderWrongLeader -> Nothing)
         either whenNotCreated whenCreated createdBlock
         logInfoS "onNewSlotWhenLeader: done"
     whenCreated createdBlk = do

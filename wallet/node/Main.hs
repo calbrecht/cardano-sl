@@ -16,7 +16,9 @@ import           Formatting (build, sformat, (%))
 import           Mockable (Production, runProduction)
 import           System.Wlog (LoggerName, logInfo, modifyLoggerName)
 
+import           Pos.Behavior (BehaviorConfig (..))
 import           Pos.Binary ()
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import           Pos.Client.CLI (CommonNodeArgs (..), NodeArgs (..), getNodeParams)
 import qualified Pos.Client.CLI as CLI
 import           Pos.Communication (ActionSpec (..), OutSpecs, WorkerSpec, worker)
@@ -51,6 +53,7 @@ loggerName = "node"
 actionWithWallet ::
        ( HasConfigurations
        , HasCompileInfo
+       , HasBlockBehavior
        )
     => SscParams
     -> NodeParams
@@ -136,8 +139,9 @@ action (WalletNodeArgs (cArgs@CommonNodeArgs{..}) (wArgs@WalletArgs{..})) =
 
         let vssSK = fromJust $ npUserSecret currentParams ^. usVss
         let sscParams = CLI.gtSscParams cArgs vssSK (npBehaviorConfig currentParams)
+        let blockBehavior = bcBlockBehavior . npBehaviorConfig $ currentParams
 
-        actionWithWallet sscParams currentParams wArgs
+        withBlockBehavior blockBehavior $ actionWithWallet sscParams currentParams wArgs
   where
     nodeArgs :: NodeArgs
     nodeArgs = NodeArgs { behaviorConfigPath = Nothing }

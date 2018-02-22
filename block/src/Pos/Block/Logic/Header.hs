@@ -24,6 +24,7 @@ import           Serokell.Util.Text (listJson)
 import           Serokell.Util.Verify (VerificationRes (..), isVerSuccess)
 import           System.Wlog (WithLogger, logDebug)
 
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Block.Configuration (HasBlockConfiguration, recoveryHeadersMessage)
 import           Pos.Block.Logic.Util (lcaWithMainChain)
 import           Pos.Block.Pure (VerifyHeaderParams (..), verifyHeader, verifyHeaders)
@@ -77,6 +78,7 @@ classifyNewHeader
     , MonadDBRead m
     , MonadSlots ctx m
     , HasLrcContext ctx
+    , HasBlockBehavior
     )
     => BlockHeader -> m ClassifyHeaderRes
 -- Genesis headers seem useless, we can create them by ourselves.
@@ -168,6 +170,7 @@ classifyHeaders ::
        , MonadSlots ctx m
        , WithLogger m
        , HasConfiguration
+       , HasBlockBehavior
        )
     => Bool -- recovery in progress?
     -> NewestFirst NE BlockHeader

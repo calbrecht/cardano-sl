@@ -157,6 +157,7 @@ executable cardano-explorer
   other-modules:       ExplorerNodeOptions
   build-depends:       base
                      , cardano-sl
+                     , cardano-sl-block
                      , cardano-sl-core
                      , cardano-sl-infra
                      , cardano-sl-explorer

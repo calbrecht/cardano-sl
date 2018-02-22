@@ -30,6 +30,7 @@ import           Mockable (Production)
 import           System.Wlog (HasLoggerName (..))
 
 import           Pos.Block.BListener (MonadBListener (..))
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import           Pos.Block.Slog (HasSlogContext (..), HasSlogGState (..))
 import           Pos.Client.KeyStorage (MonadKeys (..), MonadKeysRead (..), getSecretDefault,
                                         modifySecretDefault)
@@ -78,8 +79,8 @@ data CmdCtx = CmdCtx
 
 type AuxxMode = ReaderT AuxxContext Production
 
-class (m ~ AuxxMode, HasConfigurations, HasCompileInfo) => MonadAuxxMode m
-instance (HasConfigurations, HasCompileInfo) => MonadAuxxMode AuxxMode
+class (m ~ AuxxMode, HasConfigurations, HasCompileInfo, HasBlockBehavior) => MonadAuxxMode m
+instance (HasConfigurations, HasCompileInfo, HasBlockBehavior) => MonadAuxxMode AuxxMode
 
 data AuxxContext = AuxxContext
     { acRealModeContext :: !(RealModeContext EmptyMempoolExt)
@@ -219,7 +220,7 @@ instance MonadKnownPeers AuxxMode where
 instance MonadFormatPeers AuxxMode where
     formatKnownPeers = OQ.Reader.formatKnownPeersReader (rmcOutboundQ . acRealModeContext)
 
-instance (HasConfigurations, HasCompileInfo) =>
+instance (HasConfigurations, HasCompileInfo, HasBlockBehavior) =>
          MonadAddresses AuxxMode where
     type AddrData AuxxMode = PublicKey
     getNewAddress = makePubKeyAddressAuxx
@@ -243,8 +244,8 @@ instance (HasConfiguration, HasInfraConfiguration, HasCompileInfo) => MonadTxpLo
 
 instance (HasConfigurations) =>
          MonadTxpLocal (BlockGenMode EmptyMempoolExt AuxxMode) where
-    txpNormalize = withCompileInfo def $ txNormalize
-    txpProcessTx = withCompileInfo def $ txProcessTransactionNoLock
+    txpNormalize = withCompileInfo def $ withBlockBehavior def txNormalize
+    txpProcessTx = withCompileInfo def $ withBlockBehavior def txProcessTransactionNoLock
 
 -- | In order to create an 'Address' from a 'PublicKey' we need to
 -- choose suitable stake distribution. We want to pick it based on

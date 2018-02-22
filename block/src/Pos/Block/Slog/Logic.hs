@@ -32,6 +32,7 @@ import           Serokell.Util.Verify (formatAllErrors, verResToMonadError)
 import           System.Wlog (WithLogger)
 
 import           Pos.Binary.Core ()
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Block.BListener (MonadBListener (..))
 import           Pos.Block.Pure (verifyBlocks)
 import           Pos.Block.Slog.Context (slogGetLastSlots, slogPutLastSlots)
@@ -106,6 +107,7 @@ type MonadSlogBase ctx m =
     , WithLogger m
     , HasConfiguration
     , HasUpdateConfiguration
+    , HasBlockBehavior
     )
 
 -- | Set of constraints needed for Slog verification.

@@ -59,6 +59,7 @@ import           Test.QuickCheck (Arbitrary (..), Gen, Property, forAll, ioPrope
 import           Test.QuickCheck.Monadic (PropertyM, monadic)
 
 import           Pos.AllSecrets (AllSecrets (..), HasAllSecrets (..), mkAllSecretsSimple)
+import           Pos.Block.Behavior (withBlockBehavior)
 import           Pos.Block.BListener (MonadBListener (..), onApplyBlocksStub, onRollbackBlocksStub)
 import           Pos.Block.Slog (HasSlogGState (..), mkSlogGState)
 import           Pos.Communication.Limits (HasAdoptedBlockVersionData (..))
@@ -503,8 +504,8 @@ instance MonadFormatPeers BlockTestMode where
 type instance MempoolExt BlockTestMode = EmptyMempoolExt
 
 instance HasConfigurations => MonadTxpLocal (BlockGenMode EmptyMempoolExt BlockTestMode) where
-    txpNormalize = withCompileInfo def $ txNormalize
-    txpProcessTx = withCompileInfo def $ txProcessTransactionNoLock
+    txpNormalize = withCompileInfo def $ withBlockBehavior def txNormalize
+    txpProcessTx = withCompileInfo def $ withBlockBehavior def txProcessTransactionNoLock
 
 instance HasConfigurations => MonadTxpLocal BlockTestMode where
     txpNormalize = withCompileInfo def $ txNormalize

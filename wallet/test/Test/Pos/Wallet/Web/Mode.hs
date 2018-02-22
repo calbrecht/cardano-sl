@@ -35,6 +35,7 @@ import           Test.QuickCheck.Gen (Gen)
 import           Test.QuickCheck.Monadic (PropertyM (..), monadic)
 
 import           Pos.AllSecrets (HasAllSecrets (..))
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Block.BListener (MonadBListener (..))
 import           Pos.Block.Slog (HasSlogGState (..))
 import           Pos.Block.Types (LastKnownHeader, LastKnownHeaderTag, ProgressHeader,
@@ -410,7 +411,7 @@ instance HasConfiguration => MonadBlockchainInfo WalletTestMode where
 
 type instance MempoolExt WalletTestMode = WalletMempoolExt
 
-instance (HasCompileInfo, HasConfigurations)
+instance (HasCompileInfo, HasConfigurations, HasBlockBehavior)
         => MonadTxpLocal (BlockGenMode WalletMempoolExt WalletTestMode) where
     txpNormalize = txNormalize
     txpProcessTx = txProcessTransactionNoLock

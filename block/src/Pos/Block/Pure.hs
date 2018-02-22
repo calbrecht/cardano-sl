@@ -25,6 +25,7 @@ import           Serokell.Util (VerificationRes (..), verifyGeneric)
 import qualified Pos.Binary.Class as Bi
 import           Pos.Binary.Core ()
 import           Pos.Binary.Update ()
+import           Pos.Block.Behavior (HasBlockBehavior, BlockBehavior (..), ForgeHeaderParams (..), blockBehavior)
 import           Pos.Block.BHelpers ()
 import           Pos.Core (BlockVersionData (..), ChainDifficulty, EpochOrSlot, HasConfiguration,
                            HasDifficulty (..), HasEpochIndex (..), HasEpochOrSlot (..),
@@ -65,7 +66,7 @@ maybeMempty = maybe mempty
 -- | Check some predicates (determined by 'VerifyHeaderParams') about
 -- 'BlockHeader'.
 verifyHeader
-    :: HasConfiguration
+    :: (HasConfiguration, HasBlockBehavior)
     => VerifyHeaderParams -> BlockHeader -> VerificationRes
 verifyHeader VerifyHeaderParams {..} h =
     verifyGeneric checks
@@ -141,9 +142,10 @@ verifyHeader VerifyHeaderParams {..} h =
 
     -- CHECK: Checks that the block leader is the expected one.
     relatedToLeaders leaders =
-        case h of
-            Left _ -> []
-            Right mainHeader ->
+        case (h, bbForgeHeader blockBehavior) of
+            (_, HeaderWrongLeader) -> []
+            (Left _, _) -> []
+            (Right mainHeader, _) ->
                 [ ( (Just (addressHash $ mainHeader ^. mainHeaderLeaderKey) ==
                      leaders ^?
                      ix (fromIntegral $ getSlotIndex $
@@ -165,7 +167,7 @@ verifyHeader VerifyHeaderParams {..} h =
 -- | Verifies a set of block headers. Only basic consensus check and
 -- linking checks are performed!
 verifyHeaders ::
-       HasConfiguration
+      (HasConfiguration, HasBlockBehavior)
     => Maybe SlotLeaders
     -> NewestFirst [] BlockHeader
     -> VerificationRes
@@ -212,7 +214,7 @@ data VerifyBlockParams = VerifyBlockParams
 -- | Check predicates defined by VerifyBlockParams.
 -- #verifyHeader
 verifyBlock
-    :: HasConfiguration
+    :: (HasConfiguration, HasBlockBehavior)
     => VerifyBlockParams -> Block -> VerificationRes
 verifyBlock VerifyBlockParams {..} blk =
     mconcat
@@ -255,6 +257,7 @@ verifyBlocks
     :: ( t ~ OldestFirst f Block
        , NontrivialContainer t
        , HasConfiguration
+       , HasBlockBehavior
        )
     => Maybe SlotId
     -> Bool

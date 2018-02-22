@@ -17,7 +17,9 @@ import           System.Wlog (LoggerName, logInfo)
 
 import           ExplorerNodeOptions (ExplorerArgs (..), ExplorerNodeArgs (..),
                                       getExplorerNodeOptions)
+import           Pos.Behavior (BehaviorConfig (..))
 import           Pos.Binary ()
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import           Pos.Client.CLI (CommonNodeArgs (..), NodeArgs (..), getNodeParams)
 import qualified Pos.Client.CLI as CLI
 import           Pos.Communication (OutSpecs, WorkerSpec)
@@ -60,6 +62,7 @@ action (ExplorerNodeArgs (cArgs@CommonNodeArgs{..}) ExplorerArgs{..}) =
 
         let vssSK = fromJust $ npUserSecret currentParams ^. usVss
         let sscParams = CLI.gtSscParams cArgs vssSK (npBehaviorConfig currentParams)
+        let blockBehavior = bcBlockBehavior . npBehaviorConfig $ currentParams
 
         let plugins :: HasConfigurations => ([WorkerSpec ExplorerProd], OutSpecs)
             plugins = mconcatPair
@@ -67,7 +70,7 @@ action (ExplorerNodeArgs (cArgs@CommonNodeArgs{..}) ExplorerArgs{..}) =
                 , notifierPlugin NotifierSettings{ nsPort = notifierPort }
                 , updateTriggerWorker
                 ]
-        bracketNodeResources currentParams sscParams
+        withBlockBehavior blockBehavior $ bracketNodeResources currentParams sscParams
             explorerTxpGlobalSettings
             explorerInitDB $ \nr@NodeResources {..} ->
             let extraCtx = makeExtraCtx
@@ -80,7 +83,7 @@ action (ExplorerNodeArgs (cArgs@CommonNodeArgs{..}) ExplorerArgs{..}) =
     conf = CLI.configurationOptions $ CLI.commonArgs cArgs
 
     runExplorerRealMode
-        :: (HasConfigurations,HasCompileInfo)
+        :: (HasConfigurations,HasCompileInfo,HasBlockBehavior)
         => NodeResources ExplorerExtra ExplorerProd
         -> (WorkerSpec ExplorerProd, OutSpecs)
         -> Production ()

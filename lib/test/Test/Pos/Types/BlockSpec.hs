@@ -12,10 +12,12 @@ import           Serokell.Util (isVerSuccess)
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property, (===), (==>))
+import           Data.Default (def)
 
 import           Pos.Arbitrary.Block as T
 import           Pos.Binary (Bi)
 import qualified Pos.Block.Base as T
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import qualified Pos.Block.Pure as T
 import           Pos.Core (HasConfiguration, genesisHash)
 import qualified Pos.Core as T
@@ -28,7 +30,7 @@ import           Pos.Util.Util (leftToPanic)
 import           Test.Pos.Util (withDefConfiguration)
 
 spec :: Spec
-spec = withDefConfiguration $ describe "Block properties" $ do
+spec = withDefConfiguration $ withBlockBehavior def $ describe "Block properties" $ do
     describe "mkMainHeader" $ do
         prop mainHeaderFormationDesc mainHeaderFormation
     describe "mkGenesisHeader" $ do
@@ -47,7 +49,7 @@ spec = withDefConfiguration $ describe "Block properties" $ do
     verifyHeadersDesc = "Successfully verifies a correct chain of block headers"
     verifyEmptyHsDesc = "Successfully validates an empty header chain"
     emptyHeaderChain ::
-           HasConfiguration
+           (HasConfiguration, HasBlockBehavior)
         => NewestFirst [] T.BlockHeader
         -> Spec
     emptyHeaderChain l =
@@ -144,13 +146,13 @@ mainHeaderFormation prevHeader slotId signer body extra =
 ----------------------------------------------------------------------------
 
 validateGoodMainHeader
-    :: HasConfiguration
+    :: (HasConfiguration, HasBlockBehavior)
     => T.HeaderAndParams -> Bool
 validateGoodMainHeader (T.getHAndP -> (params, header)) =
     isVerSuccess $ T.verifyHeader params header
 
 validateGoodHeaderChain
-    :: HasConfiguration
+    :: (HasConfiguration, HasBlockBehavior)
     => T.BlockHeaderList -> Bool
 validateGoodHeaderChain (T.BHL (l, _)) =
     isVerSuccess $ T.verifyHeaders Nothing (NewestFirst l)

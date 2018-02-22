@@ -28,6 +28,7 @@ import           Pos.Block.Logic.Internal (MonadBlockApply, applyBlocksUnsafe, n
 import           Pos.Block.Logic.Util (calcChainQualityM)
 import           Pos.Block.Logic.VAR (verifyBlocksPrefix)
 import           Pos.Block.Slog (HasSlogGState (..), ShouldCallBListener (..))
+import           Pos.Block.Behavior (BlockBehavior (..), ForgeHeaderParams (..), blockBehavior)
 import           Pos.Core (Blockchain (..), EpochIndex, EpochOrSlot (..), HasConfiguration,
                            HeaderHash, SlotId (..), chainQualityThreshold, epochIndexL, epochSlots,
                            flattenSlotId, getEpochOrSlot, headerHash)
@@ -37,7 +38,7 @@ import           Pos.Core.Context (HasPrimaryKey, getOurSecretKey)
 import           Pos.Core.Ssc (SscPayload)
 import           Pos.Core.Txp (TxAux (..), mkTxPayload)
 import           Pos.Core.Update (UpdatePayload (..))
-import           Pos.Crypto (SecretKey)
+import           Pos.Crypto (SecretKey, keyGen)
 import qualified Pos.DB.BlockIndex as DB
 import           Pos.DB.Class (MonadDBRead)
 import           Pos.Delegation (DelegationVar, DlgPayload (getDlgPayload), ProxySKBlockInfo,
@@ -246,7 +247,9 @@ createMainBlockInternal sId pske = do
     createMainBlockFinish :: BlockHeader -> ExceptT Text m MainBlock
     createMainBlockFinish prevHeader = do
         rawPay <- lift $ getRawPayload (headerHash prevHeader) sId
-        sk <- getOurSecretKey
+        sk <- case bbForgeHeader blockBehavior of
+            HeaderNormal      -> getOurSecretKey
+            HeaderWrongLeader -> snd <$> keyGen
         -- 100 bytes is substracted to account for different unexpected
         -- overhead.  You can see that in bitcoin blocks are 1-2kB less
         -- than limit. So i guess it's fine in general.

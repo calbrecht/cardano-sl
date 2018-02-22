@@ -13,6 +13,8 @@ import qualified Network.Transport.TCP as TCP (TCPAddr (..))
 import qualified System.IO.Temp as Temp
 import           System.Wlog (LoggerName, logInfo)
 
+import           Pos.Behavior (BehaviorConfig (..))
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import qualified Pos.Client.CLI as CLI
 import           Pos.Communication (OutSpecs, WorkerSpec)
 import           Pos.Core (ConfigurationError)
@@ -69,7 +71,7 @@ correctNodeParams AuxxOptions {..} np = do
         }
 
 runNodeWithSinglePlugin ::
-       (HasConfigurations, HasCompileInfo)
+       (HasConfigurations, HasCompileInfo, HasBlockBehavior)
     => NodeResources EmptyMempoolExt AuxxMode
     -> (WorkerSpec AuxxMode, OutSpecs)
     -> (WorkerSpec AuxxMode, OutSpecs)
@@ -113,10 +115,12 @@ action opts@AuxxOptions {..} command = do
                   lift $ runReaderT auxxAction auxxContext
           let vssSK = unsafeFromJust $ npUserSecret nodeParams ^. usVss
           let sscParams = CLI.gtSscParams cArgs vssSK (npBehaviorConfig nodeParams)
-          bracketNodeResources nodeParams sscParams txpGlobalSettings initNodeDBs $ \nr ->
-              runRealBasedMode toRealMode realModeToAuxx nr $
-                  (if aoStartMode == WithNode then runNodeWithSinglePlugin nr else identity)
-                  (auxxPlugin opts command)
+          let blockBehavior = bcBlockBehavior . npBehaviorConfig $ nodeParams
+          withBlockBehavior blockBehavior $
+              bracketNodeResources nodeParams sscParams txpGlobalSettings initNodeDBs $ \nr ->
+                  runRealBasedMode toRealMode realModeToAuxx nr $
+                      (if aoStartMode == WithNode then runNodeWithSinglePlugin nr else identity)
+                      (auxxPlugin opts command)
   where
     cArgs@CLI.CommonNodeArgs {..} = aoCommonNodeArgs
     conf = CLI.configurationOptions (CLI.commonArgs cArgs)

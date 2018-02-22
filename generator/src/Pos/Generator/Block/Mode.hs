@@ -31,6 +31,7 @@ import           System.Wlog (WithLogger, logWarning)
 
 import           Pos.Block.BListener (MonadBListener (..))
 import           Pos.Block.Slog (HasSlogGState (..))
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Client.Txp.Addresses (MonadAddresses (..))
 import           Pos.Communication.Limits (HasAdoptedBlockVersionData (..))
 import           Pos.Configuration (HasNodeConfiguration)
@@ -85,6 +86,7 @@ type MonadBlockGenBase m
        , HasSscConfiguration
        , HasNodeConfiguration
        , HasDlgConfiguration
+       , HasBlockBehavior
        )
 
 -- | A set of constraints necessary for blockchain generation. All

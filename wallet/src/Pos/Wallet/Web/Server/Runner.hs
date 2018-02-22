@@ -26,6 +26,7 @@ import           Network.Wai (Application)
 import           Servant.Server (Handler)
 import           System.Wlog (logDebug, logInfo)
 
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Communication (ActionSpec (..), OutSpecs)
 import           Pos.Communication.Protocol (SendActions)
 import           Pos.Launcher.Configuration (HasConfigurations)
@@ -46,6 +47,7 @@ import           Pos.Web (TlsParams)
 runWRealMode
     :: ( HasConfigurations
        , HasCompileInfo
+       , HasBlockBehavior
        )
     => WalletState
     -> ConnectionsVar

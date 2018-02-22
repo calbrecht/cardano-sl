@@ -14,7 +14,9 @@ import           Data.Maybe (fromJust)
 import           Mockable (Production, runProduction)
 import           System.Wlog (LoggerName, logInfo)
 
+import           Pos.Behavior (BehaviorConfig (..))
 import           Pos.Binary ()
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import           Pos.Client.CLI (CommonNodeArgs (..), NodeArgs (..), SimpleNodeArgs (..))
 import qualified Pos.Client.CLI as CLI
 import           Pos.Launcher (HasConfigurations, NodeParams (..), loggerBracket, runNodeReal,
@@ -31,6 +33,7 @@ loggerName = "node"
 actionWithoutWallet
     :: ( HasConfigurations
        , HasCompileInfo
+       , HasBlockBehavior
        )
     => SscParams
     -> NodeParams
@@ -51,8 +54,9 @@ action (SimpleNodeArgs (cArgs@CommonNodeArgs {..}) (nArgs@NodeArgs {..})) = do
 
     let vssSK = fromJust $ npUserSecret currentParams ^. usVss
     let sscParams = CLI.gtSscParams cArgs vssSK (npBehaviorConfig currentParams)
+    let blockBehavior = bcBlockBehavior . npBehaviorConfig $ currentParams
 
-    actionWithoutWallet sscParams currentParams
+    withBlockBehavior blockBehavior $ actionWithoutWallet sscParams currentParams
 
 main :: IO ()
 main = withCompileInfo $(retrieveCompileTimeInfo) $ do

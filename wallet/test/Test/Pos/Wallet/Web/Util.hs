@@ -30,6 +30,7 @@ import           Test.QuickCheck (Arbitrary (..), choose, frequency, sublistOf, 
 import           Test.QuickCheck.Gen (Gen (MkGen))
 import           Test.QuickCheck.Monadic (assert, pick)
 
+import           Pos.Block.Behavior (HasBlockBehavior)
 import           Pos.Block.Types (Blund, LastKnownHeaderTag, ProgressHeaderTag)
 import           Pos.Client.KeyStorage (getSecretKeysPlain)
 import           Pos.Client.Txp.Balances (getBalance)
@@ -63,7 +64,7 @@ import           Test.Pos.Wallet.Web.Mode (WalletProperty)
 
 -- | Gen blocks in WalletProperty
 wpGenBlocks
-    :: (HasCompileInfo, HasConfigurations)
+    :: (HasCompileInfo, HasConfigurations, HasBlockBehavior)
     => Maybe BlockCount
     -> EnableTxPayload
     -> InplaceDB
@@ -86,7 +87,7 @@ wpGenBlocks blkCnt enTxPayload inplaceDB = do
             Nothing -> pure (prevTip, blunds)
 
 wpGenBlock
-    :: (HasCompileInfo, HasConfigurations)
+    :: (HasCompileInfo, HasConfigurations, HasBlockBehavior)
     => EnableTxPayload
     -> InplaceDB
     -> WalletProperty Blund

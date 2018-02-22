@@ -21,6 +21,7 @@ import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Gen, arbitrary, choose)
 import           Test.QuickCheck.Monadic (pick)
 
+import           Pos.Block.Behavior (HasBlockBehavior, withBlockBehavior)
 import           Pos.Binary.Class (serialize')
 import           Pos.Block.Logic (applyBlocksUnsafe)
 import           Pos.Block.Slog (ShouldCallBListener (..))
@@ -45,7 +46,7 @@ import           Test.Pos.Util (maybeStopProperty, stopProperty, withStaticConfi
 
 
 spec :: Spec
-spec = withStaticConfigurations $ withCompileInfo def $
+spec = withStaticConfigurations $ withCompileInfo def $ withBlockBehavior def $
     describe "Lrc.Worker" $ modifyMaxSuccess (const 4) $ do
         describe "lrcSingleShot" $ do
             -- Currently we want to run it only 4 times, because there
@@ -114,7 +115,7 @@ genGenesisInitializer = do
 -- Actual correctness test
 ----------------------------------------------------------------------------
 
-lrcCorrectnessProp :: (HasConfigurations, HasCompileInfo) => BlockProperty ()
+lrcCorrectnessProp :: (HasConfigurations, HasBlockBehavior, HasCompileInfo) => BlockProperty ()
 lrcCorrectnessProp = do
     let k = blkSecurityParam
     -- This value is how many blocks we need to generate first. We
@@ -227,7 +228,8 @@ checkRichmen = do
                  %coinF%", total stake is "%coinF)
                 poorGuyStake totalStake
 
-genAndApplyBlockFixedTxs :: (HasConfigurations,HasCompileInfo) => [TxAux] -> BlockProperty ()
+genAndApplyBlockFixedTxs :: (HasConfigurations, HasBlockBehavior, HasCompileInfo)
+                         => [TxAux] -> BlockProperty ()
 genAndApplyBlockFixedTxs txs = do
     let txPayload = mkTxPayload txs
     emptyBlund <- bpGenBlock (EnableTxPayload False) (InplaceDB False)
@@ -256,7 +258,8 @@ txsAfterBoundary = pure []
 -- Less than `k` blocks test.
 ----------------------------------------------------------------------------
 
-lessThanKAfterCrucialProp :: (HasConfigurations, HasCompileInfo) => BlockProperty ()
+lessThanKAfterCrucialProp :: (HasConfigurations, HasBlockBehavior, HasCompileInfo)
+                          => BlockProperty ()
 lessThanKAfterCrucialProp = do
     let k = blkSecurityParam
     -- We need to generate '8 * k' blocks for first '8 * k' slots.

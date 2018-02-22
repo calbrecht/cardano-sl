@@ -145,6 +145,7 @@ executable cardano-node-new
                      , aeson-pretty
                      , bytestring
                      , cardano-sl
+                     , cardano-sl-block
                      , cardano-sl-client
                      , cardano-sl-core
                      , cardano-sl-crypto
