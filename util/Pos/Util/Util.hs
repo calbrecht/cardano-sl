@@ -400,8 +400,8 @@ tMeasureLog = tMeasure logDebug
 tMeasureIO :: (MonadIO m) => Text -> m a -> m a
 tMeasureIO = tMeasure putText
 
--- | Measures time executed by the particular action, logs it before
--- returning the result.
+-- | Takes the first time sample, executes action (forcing its
+-- result), takes the second time sample, logs it.
 tMeasure :: (MonadIO m) => (Text -> m ()) -> Text -> m a -> m a
 tMeasure logAction label action = do
     before <- liftIO getCurrentTime

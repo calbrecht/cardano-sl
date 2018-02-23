@@ -43,7 +43,7 @@ import           Pos.Update.Poll (PollModifier)
 import           Pos.Util (neZipWith4, spanSafe, _neHead)
 import           Pos.Util.Chrono (NE, NewestFirst (..), OldestFirst (..), toNewestFirst,
                                   toOldestFirst)
-import           Pos.Util.Util (HasLens (..))
+import           Pos.Util.Util (HasLens (..), tMeasureLog)
 
 -- -- CHECK: @verifyBlocksLogic
 -- -- #txVerifyBlocks
@@ -185,7 +185,7 @@ verifyAndApplyBlocks rollback blocks = runExceptT $ do
                        <> pretty epochIndex
             lift $ lrcSingleShot epochIndex
         logDebug "Rolling: verifying"
-        lift (verifyBlocksPrefix prefix) >>= \case
+        lift (tMeasureLog "verifyAndApply.verify" $ verifyBlocksPrefix prefix) >>= \case
             Left (ApplyBlocksVerifyFailure -> failure)
                 | rollback  -> failWithRollback failure blunds
                 | otherwise -> do
@@ -197,7 +197,10 @@ verifyAndApplyBlocks rollback blocks = runExceptT $ do
                 let newBlunds = OldestFirst $ getOldestFirst prefix `NE.zip`
                                               getOldestFirst undos
                 logDebug "Rolling: Verification done, applying unsafe block"
-                lift $ applyBlocksUnsafe (ShouldCallBListener True) newBlunds (Just pModifier)
+                tMeasureLog "verifyAndApply.apply" $
+                    lift $ applyBlocksUnsafe (ShouldCallBListener True)
+                                             newBlunds
+                                             (Just pModifier)
                 case getOldestFirst suffix of
                     [] -> lift GS.getTip
                     (genesis:xs) -> do

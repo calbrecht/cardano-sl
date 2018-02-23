@@ -20,7 +20,7 @@ import           Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as S
 import qualified Data.Text.Buildable as B
-import           Data.Time.Units (toMicroseconds, fromMicroseconds)
+import           Data.Time.Units (fromMicroseconds, toMicroseconds)
 import           Formatting (bprint, build, int, sformat, shown, stext, (%))
 import qualified Network.Broadcast.OutboundQueue as OQ
 import           Serokell.Util.Text (listJson)
@@ -48,7 +48,7 @@ import           Pos.Network.Types (Bucket)
 -- Dubious having this security stuff in here.
 import           Pos.Security.Params (AttackTarget (..), AttackType (..), NodeAttackedError (..),
                                       SecurityParams (..))
-import           Pos.Util (_neHead, _neLast)
+import           Pos.Util (tMeasureLog, _neHead, _neLast)
 import           Pos.Util.Chrono (NE, NewestFirst (..), OldestFirst (..), nonEmptyNewestFirst,
                                   toOldestFirst, _NewestFirst, _OldestFirst)
 import           Pos.Util.Timer (Timer, setTimerDuration, startTimer)
@@ -357,7 +357,7 @@ handleHeadersCommunication logic conv = do
         -- FIXME
         -- Diffusion layer is entirely capable of serving blocks even if the
         -- logic layer is in recovery mode.
-        ifM (recoveryInProgress logic) onRecovery $ do
+        ifM (recoveryInProgress logic) onRecovery $ tMeasureLog "handleGetHeaders" $ do
             headers <- case (mghFrom,mghTo) of
                 -- This is how a peer requests our tip: empty checkpoint list,
                 -- Nothing for the limiting hash.
@@ -448,7 +448,7 @@ handleGetBlocks
     -> (ListenerSpec m, OutSpecs)
 handleGetBlocks logic oq = listenerConv oq $ \__ourVerInfo nodeId conv -> do
     mbMsg <- recvLimited conv
-    whenJust mbMsg $ \mgb@MsgGetBlocks{..} -> do
+    whenJust mbMsg $ \mgb@MsgGetBlocks{..} -> tMeasureLog "handleGoetBlocks" $ do
         logDebug $ sformat ("handleGetBlocks: got request "%build%" from "%build)
             mgb nodeId
         -- [CSL-2148] will probably make this a faster, streaming style:
@@ -458,20 +458,23 @@ handleGetBlocks logic oq = listenerConv oq $ \__ourVerInfo nodeId conv -> do
         -- necessary: the streaming thing (probably a conduit) can determine
         -- whether the DB is malformed. Really, this listener has no business
         -- deciding that the database is malformed.
-        hashesM <- getHashesRange logic (Just recoveryHeadersMessage) mgbFrom mgbTo
+        !hashesM <-
+            tMeasureLog "handleGetBlocks.getHashesRange" $
+            second force <$> getHashesRange logic (Just recoveryHeadersMessage) mgbFrom mgbTo
         case hashesM of
             Right hashes -> do
                 logDebug $ sformat
                     ("handleGetBlocks: started sending "%int%
                      " blocks to "%build%" one-by-one: "%listJson)
                     (length hashes) nodeId hashes
-                for_ hashes $ \hHash ->
-                    getBlock logic hHash >>= \case
-                        Just b -> send conv $ MsgBlock b
-                        Nothing  -> do
-                            send conv $ MsgNoBlock ("Couldn't retrieve block with hash " <>
-                                                    pretty hHash)
-                            failMalformed
+                tMeasureLog "handleGetBlocks.sendBlocks" $
+                    for_ hashes $ \hHash ->
+                        getBlock logic hHash >>= \case
+                            Just b -> send conv $ MsgBlock b
+                            Nothing  -> do
+                                send conv $ MsgNoBlock ("Couldn't retrieve block with hash " <>
+                                                        pretty hHash)
+                                failMalformed
                 logDebug "handleGetBlocks: blocks sending done"
             Left e -> logWarning $ "getBlocksByHeaders@retrieveHeaders returned error: " <> show e
   where

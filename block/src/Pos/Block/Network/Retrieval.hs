@@ -35,7 +35,7 @@ import           Pos.Diffusion.Types (Diffusion)
 import qualified Pos.Diffusion.Types as Diffusion (Diffusion (getBlocks))
 import           Pos.Reporting (reportOrLogE, reportOrLogW)
 import           Pos.Util.Chrono (NE, OldestFirst (..), _OldestFirst)
-import           Pos.Util.Util (HasLens (..))
+import           Pos.Util.Util (HasLens (..), tMeasureLog)
 import           Pos.Worker.Types (WorkerSpec, worker)
 
 retrievalWorker
@@ -280,7 +280,9 @@ getProcessBlocks
     -> [HeaderHash]
     -> m ()
 getProcessBlocks diffusion nodeId desired checkpoints = do
-    result <- Diffusion.getBlocks diffusion nodeId desired checkpoints
+    result <-
+        tMeasureLog "getProcessBlocks.getBlocks" $
+        Diffusion.getBlocks diffusion nodeId desired checkpoints
     case OldestFirst <$> nonEmpty (getOldestFirst result) of
       Nothing -> do
           let msg = sformat ("getProcessBlocks: diffusion returned []"%
@@ -292,7 +294,8 @@ getProcessBlocks diffusion nodeId desired checkpoints = do
           logDebug $ sformat
               ("Retrieved "%int%" blocks")
               (blocks ^. _OldestFirst . to NE.length)
-          handleBlocks nodeId blocks diffusion 
+          tMeasureLog "getProcessBlocks.handleBlocks" $
+              handleBlocks nodeId blocks diffusion
           -- If we've downloaded any block with bigger
           -- difficulty than ncRecoveryHeader, we're
           -- gracefully exiting recovery mode.

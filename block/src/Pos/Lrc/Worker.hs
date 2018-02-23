@@ -53,7 +53,7 @@ import           Pos.Update.Poll.Types (BlockVersionState (..))
 import           Pos.Util (maybeThrow)
 import           Pos.Util.Chrono (NE, NewestFirst (..), toOldestFirst)
 import           Pos.Util.TimeLimit (logWarningWaitLinear)
-import           Pos.Util.Util (HasLens (..))
+import           Pos.Util.Util (HasLens (..), tMeasureLog)
 
 
 ----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ lrcSingleShot epoch = do
                     , expectedRichmenComp)
         when need $ do
             logInfo "LRC is starting actual computation"
-            lrcDo epoch filteredConsumers
+            tMeasureLog "LRC.lrcDo" $ lrcDo epoch filteredConsumers
             logInfo "LRC has finished actual computation"
         putEpoch epoch
         logInfo ("LRC has updated LRC DB" <> for_thEpochMsg)

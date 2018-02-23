@@ -23,8 +23,9 @@ import           Pos.Communication.Limits.Types (MessageLimited)
 import qualified Pos.Communication.Relay as Relay
 import           Pos.Core.Txp (TxAux (..), TxId)
 import           Pos.Crypto (hash)
-import           Pos.Txp.MemState (MempoolExt, MonadTxpLocal, MonadTxpMem, txpProcessTx, JLTxR (..))
+import           Pos.Txp.MemState (JLTxR (..), MempoolExt, MonadTxpLocal, MonadTxpMem, txpProcessTx)
 import           Pos.Txp.Network.Types (TxMsgContents (..))
+import           Pos.Util.Util (tMeasureLog)
 
 -- Real tx processing
 -- CHECK: @handleTxDo
@@ -36,7 +37,7 @@ handleTxDo
     -> m Bool
 handleTxDo logTx txAux = do
     let txId = hash (taTx txAux)
-    res <- txpProcessTx (txId, txAux)
+    res <- tMeasureLog "handleTxDo.txProcessTx" $ txpProcessTx (txId, txAux)
     let json me = logTx $ JLTxR
             { jlrTxId     = sformat build txId
             , jlrError    = me
